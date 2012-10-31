@@ -1,0 +1,10 @@
+#!/bin/bash
+read oldrev newrev refname
+
+REDMINE_DIR=/home/redmine/redmine/
+
+# Don't forget to replace VER
+RVM_ENVIRONMENT_PATH=/home/redmine/.rvm/environments/ruby-VER
+source $RVM_ENVIRONMENT_PATH
+
+$REDMINE_DIR/script/rails runner "Repository.fetch_changesets" -e production > /dev/null 2>&1 &

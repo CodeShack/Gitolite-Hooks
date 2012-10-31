@@ -1,0 +1,3 @@
+#!/bin/bash
+read oldrev newrev refname
+echo "$(pwd), $GIT_DIR, $oldrev $newrev $refname"
