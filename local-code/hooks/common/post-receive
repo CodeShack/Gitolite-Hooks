@@ -17,23 +17,21 @@ run_hook () {
 echo -en "\e[1;33mRunning hooks..\e[00m "
 
 while read oldrev newrev refname; do
-  if [ "$refname" =  "refs/heads/master" ]; then
-    hooks=$(git cat-file blob $newrev:.hooks 2>/dev/null)
-    if [ -n "$hooks" ]; then
-      # Repo-local hooks defined in .hooks.
-      for hook in $hooks; do
-        run_hook $oldrev $newrev $refname $hook
-      done
-    fi
-
-    # Global hooks for this repo (ie. set in Gitolite config).
-    hooks=$(git config --get hooks.run)
-    [ -z "$hooks" ] && continue
-
+  hooks=$(git cat-file blob $newrev:.hooks 2>/dev/null)
+  if [ -n "$hooks" ]; then
+    # Repo-local hooks defined in .hooks.
     for hook in $hooks; do
       run_hook $oldrev $newrev $refname $hook
     done
   fi
+
+  # Global hooks for this repo (ie. set in Gitolite config).
+  hooks=$(git config --get hooks.run)
+  [ -z "$hooks" ] && continue
+
+  for hook in $hooks; do
+    run_hook $oldrev $newrev $refname $hook
+  done
 done
 
 echo -e "\e[1;32mDone.\e[00m"
