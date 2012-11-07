@@ -1,10 +1,11 @@
 #!/bin/bash
 read oldrev newrev refname
 
-REDMINE_DIR=/home/redmine/redmine/
+# This can be generated in the admin page, make sure to enable the WS.
+REDMINE_KEY='yourrepositorymanagementwskeyhere'
 
-# Don't forget to replace VER
-RVM_ENVIRONMENT_PATH=/home/redmine/.rvm/environments/ruby-VER
-source $RVM_ENVIRONMENT_PATH
+# Quickly do a lookup of our working directory and see which project it belongs to.
+PROJECT_ID=$(mysql -r -u redmineuser -predminepassword redminedb -e "select project_id from repositories where url = '$PWD';")
 
-$REDMINE_DIR/script/rails runner "Repository.fetch_changesets" -e production > /dev/null 2>&1 &
+# Do the update.
+curl -s http://yourredmineurl/sys/fetch_changesets?key=$REDMINE_KEY&id=$PROJECT_ID
