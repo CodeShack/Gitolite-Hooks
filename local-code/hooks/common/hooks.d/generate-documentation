@@ -1,0 +1,66 @@
+#!/bin/bash
+read oldrev newrev refname
+
+if [ "$refname" != "refs/heads/master" ]; then
+  echo -e "\e[1;32mNot run on this branch.\e[00m"
+  exit
+fi
+
+# Get project name from directory name
+PROJECT=$(basename "$PWD")
+
+# Remove .git from the end of the name
+PROJECT=${PROJECT%.git}
+
+# Checkout directory
+CHECKOUT_DIR=/tmp/git/${PROJECT}
+
+# Where the docs should reside
+DOCS_DIR=/srv/documentation/${PROJECT}
+
+# Create the checkout directory
+mkdir -p ${CHECKOUT_DIR}
+chmod -R 775 ${CHECKOUT_DIR}
+
+# Remove and recreate docs directory
+rm -Rf ${DOCS_DIR}
+mkdir -p ${DOCS_DIR}
+chmod -R 775 ${DOCS_DIR}
+
+# Checkout this website
+GIT_WORK_TREE=${CHECKOUT_DIR} git checkout -q -f ${newrev}
+
+# At this stage we can access the project at $CHECKOUT_DIR
+# Docs should be built to $DOCS_DIR
+
+doxygen - 2>&1 >/dev/null <<EOF
+DISABLE_INDEX = YES
+EXCLUDE_PATTERNS = */libs/* */thirdparty/* */third-party/*
+EXTRACT_ALL = YES
+FULL_PATH_NAMES = YES
+GENERATE_HTML = YES
+GENERATE_LATEX = NO
+GENERATE_MAN = NO
+GENERATE_TREEVIEW = YES
+HAVE_DOT = YES
+HTML_COLORSTYLE_HUE = 120
+HTML_COLORSTYLE_SAT = 80
+HTML_DYNAMIC_SECTIONS = YES
+HTML_OUTPUT = ${DOCS_DIR}
+HTML_TIMESTAMP = NO
+INLINE_SOURCES = YES
+INPUT = ${CHECKOUT_DIR}
+JAVADOC_AUTOBRIEF = YES
+OUTPUT_DIRECTORY = ${DOCS_DIR}
+PROJECT_NAME = "${PROJECT}"
+PROJECT_NUMBER = "$(git rev-parse --short ${newrev})"
+QUIET = YES
+RECURSIVE = YES
+SEARCHENGINE = NO
+SOURCE_BROWSER = YES
+STRIP_FROM_PATH = ${CHECKOUT_DIR}
+TAB_SIZE = 2
+EOF
+
+# Print success
+echo -e "\e[1;32mDone.\e[00m"
