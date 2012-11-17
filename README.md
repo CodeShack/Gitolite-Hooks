@@ -20,3 +20,8 @@ update-redmine-repositories
 ---
 
 Triggers your local Redmine instance to update all configured repository changesets. More info at http://demonastery.org/2012/10/a-redmine-hook/.
+
+generate-documentation
+---
+
+Builds project documentation to /srv/documentation/PROJECT-NAME/ using Doxygen.
