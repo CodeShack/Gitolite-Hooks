@@ -1,4 +1,6 @@
 #!/bin/bash
+set -eu
+
 read oldrev newrev refname
 
 # This can be generated in the admin page, make sure to enable the WS.

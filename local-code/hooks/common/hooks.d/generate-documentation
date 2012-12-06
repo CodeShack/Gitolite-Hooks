@@ -1,10 +1,7 @@
 #!/bin/bash
-read oldrev newrev refname
+set -eu
 
-if [ "$refname" != "refs/heads/master" ]; then
-  echo -e "\e[1;32mNot run on this branch.\e[00m"
-  exit
-fi
+read oldrev newrev refname
 
 # Get project name from directory name
 PROJECT=$(basename "$PWD")
@@ -28,12 +25,12 @@ mkdir -p ${DOCS_DIR}
 chmod -R 775 ${DOCS_DIR}
 
 # Checkout this website
-GIT_WORK_TREE=${CHECKOUT_DIR} git checkout -q -f ${newrev}
+GIT_WORK_TREE=${CHECKOUT_DIR} git checkout -q -f
 
 # At this stage we can access the project at $CHECKOUT_DIR
 # Docs should be built to $DOCS_DIR
 
-doxygen - 2>&1 >/dev/null <<EOF
+doxygen - <<EOF
 DISABLE_INDEX = YES
 EXCLUDE_PATTERNS = */libs/* */thirdparty/* */third-party/*
 EXTRACT_ALL = YES
@@ -61,6 +58,3 @@ SOURCE_BROWSER = YES
 STRIP_FROM_PATH = ${CHECKOUT_DIR}
 TAB_SIZE = 2
 EOF
-
-# Print success
-echo -e "\e[1;32mDone.\e[00m"

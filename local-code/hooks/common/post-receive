@@ -9,29 +9,45 @@ if [ -z "$GIT_DIR" ]; then
   exit 1
 fi
 
-run_hook () {
-  echo -en "\e[1;33m$4..\e[00m "
-  echo $1 $2 $3 | $GIT_DIR/hooks/hooks.d/$4
+LOG_FILE=/tmp/gitolite-hooks.log
+
+success () {
+  echo -e "\e[1;32mOK.\e[00m"
 }
 
-echo -en "\e[1;33mRunning hooks..\e[00m "
+error () {
+  echo -e "\e[1;31mFAIL.\e[00m"
+  echo -e "\e[1;33mPlease see '/tmp/gitolite-hooks.log' for more information.\e[00m"
+  exit 1
+}
+
+run_hook () {
+  echo -en "\e[1;33m$4..\e[00m "
+  echo $1 $2 $3 | $GIT_DIR/hooks/hooks.d/$4 >> $LOG_FILE 2>&1 && success || error
+}
+
+# Clear out log file
+echo '' > $LOG_FILE
 
 while read oldrev newrev refname; do
-  hooks=$(git cat-file blob $newrev:.hooks 2>/dev/null)
-  if [ -n "$hooks" ]; then
-    # Repo-local hooks defined in .hooks.
+  if [ "$refname" =  "refs/heads/master" ]; then
+    # Global hooks for this repo (ie. set in Gitolite config).
+    hooks=$(git config --get hooks.run)
+
+    # Check for local hooks to override global ones
+    local_hooks=$(git cat-file blob $newrev:.hooks 2>/dev/null)
+    if [ -n "$local_hooks" ]; then
+      hooks="$local_hooks"
+    fi
+
+    [ -z "$hooks" ] && continue
+
+    echo -e "\e[1;33mRunning hooks..\e[00m "
+
     for hook in $hooks; do
       run_hook $oldrev $newrev $refname $hook
     done
+
+    echo -e "\e[1;32mDone.\e[00m"
   fi
-
-  # Global hooks for this repo (ie. set in Gitolite config).
-  hooks=$(git config --get hooks.run)
-  [ -z "$hooks" ] && continue
-
-  for hook in $hooks; do
-    run_hook $oldrev $newrev $refname $hook
-  done
 done
-
-echo -e "\e[1;32mDone.\e[00m"
