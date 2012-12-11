@@ -25,7 +25,7 @@ mkdir -p ${DOCS_DIR}
 chmod -R 775 ${DOCS_DIR}
 
 # Checkout this website
-GIT_WORK_TREE=${CHECKOUT_DIR} git checkout -q -f
+GIT_WORK_TREE=${CHECKOUT_DIR} git checkout -q -f master
 
 # At this stage we can access the project at $CHECKOUT_DIR
 # Docs should be built to $DOCS_DIR
