@@ -17,17 +17,20 @@ success () {
 
 error () {
   echo -e "\e[1;31mFAIL.\e[00m"
-  echo -e "\e[1;33mPlease see '/tmp/gitolite-hooks.log' for more information.\e[00m"
+  echo -e "\e[1G        \e[1;33mPlease see '/tmp/gitolite-hooks.log' for more information.\e[00m"
   exit 1
 }
 
 run_hook () {
-  echo -en "\e[1;33m$4..\e[00m "
+  echo -en "\e[1G        \e[1;33m$4..\e[00m "
   echo $1 $2 $3 | $GIT_DIR/hooks/hooks.d/$4 >> $LOG_FILE 2>&1 && success || error
 }
 
 # Clear out log file
 echo '' > $LOG_FILE
+
+# Empty line
+echo -e "\e[1G        "
 
 while read oldrev newrev refname; do
   if [ "$refname" =  "refs/heads/master" ]; then
@@ -42,12 +45,15 @@ while read oldrev newrev refname; do
 
     [ -z "$hooks" ] && continue
 
-    echo -e "\e[1;33mRunning hooks..\e[00m "
+    echo -e "\e[1G------> \e[1;33mRunning hooks..\e[00m "
 
     for hook in $hooks; do
       run_hook $oldrev $newrev $refname $hook
     done
 
-    echo -e "\e[1;32mDone.\e[00m"
+    echo -e "\e[1G------> \e[1;32mDone.\e[00m"
   fi
 done
+
+# Empty line
+echo -e "\e[1G        "
