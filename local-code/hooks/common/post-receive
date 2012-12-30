@@ -4,56 +4,81 @@
 # By Zane Ashby
 #
 
+LOG_FILE=/tmp/gitolite-hooks.log
+
 if [ -z "$GIT_DIR" ]; then
   echo -e "\e[1;31mDon't run this script directly!\e[00m"
   exit 1
 fi
 
-LOG_FILE=/tmp/gitolite-hooks.log
+# Use these to remove "remote:" output from git.
+BLANK=$(echo -e "\e[1G        ")
+ARROW=$(echo -e "\e[1G------> ")
 
+# Colors
+CNONE=$(echo -e "\e[00m")
+CBLACK=$(echo -e "\e[1;30m")
+CWHITE=$(echo -e "\e[0;37m")
+CGREEN=$(echo -e "\e[1;32m")
+CRED=$(echo -e "\e[1;31m")
+CYELLOW=$(echo -e "\e[1;33m")
+
+# Print success.
 success () {
-  echo -e "\e[1;32mOK.\e[00m"
+  echo -e "${CGREEN}:)${CNONE}"
 }
 
+# Print error.
 error () {
-  echo -e "\e[1;31mFAIL.\e[00m"
-  echo -e "\e[1G        \e[1;33mPlease see '/tmp/gitolite-hooks.log' for more information.\e[00m"
+  echo -e "${CRED}:(${CNONE}"
+  echo -e "${ARROW}${CBLACK}Showing tail of '${LOG_FILE}' to aid in debugging:${CNONE}"
+
+  # Tail out LOG_FILE but remove "remote:" lines using sed.
+  tail -5 $LOG_FILE | sed -e "s/^/${BLANK}${CWHITE}/"
+
+  # Empty line.
+  echo -e "${CNONE}$BLANK"
+
   exit 1
 }
 
+# Run a hook.
+# Prints the hook name, and passes the data through the hooks, logging any output.
 run_hook () {
-  echo -en "\e[1G        \e[1;33m$4..\e[00m "
+  echo -en "${BLANK}${CYELLOW}$4... ${CNONE}"
   echo $1 $2 $3 | $GIT_DIR/hooks/hooks.d/$4 >> $LOG_FILE 2>&1 && success || error
 }
 
-# Clear out log file
+# Clear out log file.
 echo '' > $LOG_FILE
 
-# Empty line
-echo -e "\e[1G        "
-
 while read oldrev newrev refname; do
+  # Only hook on master.
   if [ "$refname" =  "refs/heads/master" ]; then
+    # Empty line.
+    echo -e "$BLANK"
+
     # Global hooks for this repo (ie. set in Gitolite config).
     hooks=$(git config --get hooks.run)
 
-    # Check for local hooks to override global ones
+    # Check for local hooks to override global ones.
     local_hooks=$(git cat-file blob $newrev:.hooks 2>/dev/null)
     if [ -n "$local_hooks" ]; then
       hooks="$local_hooks"
     fi
 
+    # Skip if no hooks defined.
     [ -z "$hooks" ] && continue
 
-    echo -e "\e[1G------> \e[1;33mRunning hooks..\e[00m "
+    echo -e "${ARROW}${CBLACK}Receiving push and running hooks:${CNONE}"
 
     for hook in $hooks; do
       run_hook $oldrev $newrev $refname $hook
     done
 
-    echo -e "\e[1G------> \e[1;32mDone.\e[00m"
+    echo -e "${ARROW}${CGREEN}Done.${CNONE}"
+
+    # Empty line.
+    echo -e "$BLANK"
   fi
 done
-
-# Empty line
-echo -e "\e[1G        "
